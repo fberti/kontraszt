@@ -32,45 +32,65 @@ vp run scrape
 
 The project includes a long-running scraper container.
 
-### 1. Build and start the container
+### 1. Set `CONVEX_URL`
+
+Before starting the container, make sure `CONVEX_URL` is available to Docker Compose.
+
+Example:
+
+```sh
+export CONVEX_URL=https://your-deployment.convex.cloud
+```
+
+If you use a local Convex backend, use:
+
+```sh
+export CONVEX_URL=http://host.docker.internal:3210
+```
+
+You can also put `CONVEX_URL=...` into a local Compose `.env` file if you prefer.
+
+### 2. Build and start the container
 
 ```sh
 docker compose up -d
 ```
 
-### 2. Run the scraper inside the running container
+### 3. Run the scraper inside the running container
+
+The Docker image installs `vp`, so the same package scripts work both locally and in Docker.
 
 Scrape all sites:
 
 ```sh
-docker compose exec scraper pnpm run scrape:direct
+docker compose exec scraper pnpm run scrape
 ```
 
 Scrape one site:
 
 ```sh
-docker compose exec scraper pnpm run scrape:direct -- --telex.hu
+docker compose exec scraper pnpm run scrape -- --telex.hu
 ```
 
 Scrape multiple sites:
 
 ```sh
-docker compose exec scraper pnpm run scrape:direct -- --telex.hu --hvg.hu
+docker compose exec scraper pnpm run scrape -- --telex.hu --hvg.hu
 ```
 
 Clear tables before scraping:
 
 ```sh
-docker compose exec scraper pnpm run scrape:direct -- --cleartables
+docker compose exec scraper pnpm run scrape -- --cleartables
 ```
 
 List available sites:
 
 ```sh
-docker compose exec scraper pnpm run scrape:direct -- --list-sites
+docker compose exec scraper pnpm run scrape -- --list-sites
 ```
 
-### 3. Stop the container
+### 4. Stop the container
 
 ```sh
 docker compose down
@@ -78,19 +98,13 @@ docker compose down
 
 ## Docker / Convex note
 
-If `.env.local` contains a local Convex URL like:
+Inside Docker, `127.0.0.1` points to the container itself, not your host machine.
 
-```env
-CONVEX_URL=http://127.0.0.1:3210
-```
-
-then when running inside Docker, use:
+So if your Convex backend runs locally, use:
 
 ```env
 CONVEX_URL=http://host.docker.internal:3210
 ```
-
-because inside the container, `127.0.0.1` points to the container itself.
 
 The included `docker-compose.yml` already adds:
 
@@ -101,8 +115,13 @@ extra_hosts:
 
 which is needed for this host mapping.
 
+For cloud deployments such as Coolify, do not rely on `.env.local` from your laptop. Instead, set `CONVEX_URL` in the deployment platform's environment-variable settings.
+
 ## Notes
 
 - `.env.local` is not baked into the image.
-- Runtime environment variables are loaded via `docker-compose.yml` using `env_file: .env.local`.
+- `docker-compose.yml` reads `CONVEX_URL` from the environment via `${CONVEX_URL}`.
+- Locally, you can provide that via `export CONVEX_URL=...` or a local Compose `.env` file.
+- In Coolify, set `CONVEX_URL` in the Coolify environment-variable UI.
+- The Docker image installs `vp` so `pnpm run scrape` behaves the same way inside and outside the container.
 - The container is intentionally long-running so you can execute scraper commands with `docker compose exec`.

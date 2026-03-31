@@ -4,8 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: kontraszt-scraper
-    env_file:
-      - .env.local
+    environment:
+      CONVEX_URL: ${CONVEX_URL}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     working_dir: /app
