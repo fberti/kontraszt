@@ -1,0 +1,23 @@
+{
+  "name": "kontraszt",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "convex": "vp exec convex dev",
+    "scrape": "vp exec tsx scraper/scrape.ts",
+    "typecheck": "vp exec tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "convex": "^1.34.1",
+    "crawlee": "^3.16.0",
+    "playwright": "^1.58.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "tsx": "^4.21.0",
+    "typescript": "~5.9.3"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {}
+}
