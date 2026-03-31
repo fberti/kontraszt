@@ -1,0 +1,14 @@
+services:
+  scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kontraszt-scraper
+    env_file:
+      - .env.local
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    working_dir: /app
+    stdin_open: true
+    tty: true
+    restart: unless-stopped

@@ -6,6 +6,7 @@
   "scripts": {
     "convex": "vp exec convex dev",
     "scrape": "vp exec tsx scraper/scrape.ts",
+    "scrape:direct": "tsx scraper/scrape.ts",
     "typecheck": "vp exec tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
