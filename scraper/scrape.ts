@@ -595,13 +595,6 @@ async function main() {
 
   console.log(`\nDone! Total headlines scraped: ${allHeadlines.length}`);
 
-  allHeadlines.sort((a, b) => b.score - a.score);
-  console.log("\nTop 10 headlines by importance score:");
-  for (const h of allHeadlines.slice(0, 10)) {
-    console.log(
-      `  [${h.score}] (${h.site}) fontSize=${h.fontSize}px y=${h.y} — ${h.headlineText.slice(0, 80)}`,
-    );
-  }
 }
 
 main().catch(console.error);
