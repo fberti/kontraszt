@@ -1,127 +1,114 @@
 # kontraszt
 
-CLI scraper backed by Convex.
+A `kontraszt` egy magyar hírportálokat bejáró CLI scraper, amely Playwright + Crawlee segítségével összegyűjti a címlapos headline-okat, majd az adatokat Convex backendbe szinkronizálja. A futás végén opcionálisan webhookot is meghív a `.env.local` fájlban megadott `WEBHOOK_URL`, `WEBHOOK_SECRET` és `WEBHOOK_ID` változók alapján.
 
-## Relevant files
+## Fontos fájlok
 
-- `scraper/scrape.ts` — Playwright/Crawlee scraper
-- `convex/schema.ts` — Convex schema
-- `convex/headlines.ts` — Convex sync mutations/queries
-- `Dockerfile` — container image for the scraper
-- `docker-compose.yml` — long-running Docker Compose service
+- `scraper/scrape.ts` — a scraper fő belépési pontja
+- `convex/schema.ts` — Convex séma
+- `convex/headlines.ts` — headline mentéshez és lekérdezéshez tartozó Convex függvények
+- `Dockerfile` — a scraper konténerképe
+- `docker-compose.yml` — futtatás Docker Compose-szal
 
-## Convex setup
+## Környezeti változók
 
-Start or connect to your Convex deployment:
+A projekt a `.env.local` fájlból olvassa be a beállításokat.
 
-```sh
-vp run convex
+Példa:
+
+```env
+CONVEX_URL=http://127.0.0.1:3210
+WEBHOOK_URL=https://example.com/webhook
+WEBHOOK_SECRET=your-secret
+WEBHOOK_ID=kontraszt
 ```
 
-This runs `convex dev`, generates `convex/_generated/*`, and writes `CONVEX_URL` into `.env.local`.
+## Helyes futtatási parancsok
 
-## Local run
+### 1. Convex indítása fejlesztői módban
 
-Run the scraper directly on your machine:
+```sh
+vp exec convex dev
+```
+
+Ez létrehozza/frissíti a `convex/_generated/*` fájlokat, és beállítja a `CONVEX_URL` értékét.
+
+### 2. Scraper futtatása lokálisan
+
+Összes oldal scrape-elése:
+
+```sh
+vp exec tsx scraper/scrape.ts
+```
+
+Vagy a package script segítségével:
 
 ```sh
 vp run scrape
 ```
 
-## Docker Compose
-
-The project includes a long-running scraper container.
-
-### 1. Set `CONVEX_URL`
-
-Before starting the container, make sure `CONVEX_URL` is available to Docker Compose.
-
-Example:
+### 3. Egy adott oldal scrape-elése
 
 ```sh
-export CONVEX_URL=https://your-deployment.convex.cloud
+vp exec tsx scraper/scrape.ts --telex.hu
 ```
 
-If you use a local Convex backend, use:
+Több oldal egyszerre:
 
 ```sh
-export CONVEX_URL=http://host.docker.internal:3210
+vp exec tsx scraper/scrape.ts --telex.hu --hvg.hu
 ```
 
-You can also put `CONVEX_URL=...` into a local Compose `.env` file if you prefer.
+### 4. Táblák ürítése scrape előtt
 
-### 2. Build and start the container
+```sh
+vp exec tsx scraper/scrape.ts --cleartables
+```
+
+### 5. Elérhető oldalak listázása
+
+```sh
+vp exec tsx scraper/scrape.ts --list-sites
+```
+
+### 6. Típusellenőrzés
+
+```sh
+vp exec tsc --noEmit -p tsconfig.json
+```
+
+## Docker Compose futtatás
+
+Konténer indítása:
 
 ```sh
 docker compose up -d
 ```
 
-### 3. Run the scraper inside the running container
-
-The Docker image installs `vp`, so the same package scripts work both locally and in Docker.
-
-Scrape all sites:
+Scraper futtatása a konténerben:
 
 ```sh
 docker compose exec scraper pnpm run scrape
 ```
 
-Scrape one site:
+Egy adott oldal futtatása a konténerben:
 
 ```sh
 docker compose exec scraper pnpm run scrape -- --telex.hu
 ```
 
-Scrape multiple sites:
-
-```sh
-docker compose exec scraper pnpm run scrape -- --telex.hu --hvg.hu
-```
-
-Clear tables before scraping:
-
-```sh
-docker compose exec scraper pnpm run scrape -- --cleartables
-```
-
-List available sites:
-
-```sh
-docker compose exec scraper pnpm run scrape -- --list-sites
-```
-
-### 4. Stop the container
+Konténer leállítása:
 
 ```sh
 docker compose down
 ```
 
-## Docker / Convex note
+## Megjegyzés Dockerhez
 
-Inside Docker, `127.0.0.1` points to the container itself, not your host machine.
-
-So if your Convex backend runs locally, use:
+Ha a Convex lokálisan fut, Dockerből ne a `127.0.0.1` címet használd, hanem ezt:
 
 ```env
 CONVEX_URL=http://host.docker.internal:3210
 ```
 
-The included `docker-compose.yml` already adds:
-
-```yaml
-extra_hosts:
-  - "host.docker.internal:host-gateway"
-```
-
-which is needed for this host mapping.
-
-For cloud deployments such as Coolify, do not rely on `.env.local` from your laptop. Instead, set `CONVEX_URL` in the deployment platform's environment-variable settings.
-
-## Notes
-
-- `.env.local` is not baked into the image.
-- `docker-compose.yml` reads `CONVEX_URL` from the environment via `${CONVEX_URL}`.
-- Locally, you can provide that via `export CONVEX_URL=...` or a local Compose `.env` file.
-- In Coolify, set `CONVEX_URL` in the Coolify environment-variable UI.
-- The Docker image installs `vp` so `pnpm run scrape` behaves the same way inside and outside the container.
-- The container is intentionally long-running so you can execute scraper commands with `docker compose exec`.
+A `docker-compose.yml` már tartalmazza a szükséges host mappinget ehhez.
