@@ -6,6 +6,9 @@ services:
     container_name: kontraszt-scraper
     environment:
       CONVEX_URL: ${CONVEX_URL}
+      WEBHOOK_URL: ${WEBHOOK_URL}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+      WEBHOOK_ID: ${WEBHOOK_ID}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     working_dir: /app
