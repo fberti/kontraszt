@@ -20,6 +20,12 @@ function loadEnvLocal() {
     let value = trimmed.slice(eqIdx + 1).trim();
     const commentIdx = value.indexOf(" #");
     if (commentIdx !== -1) value = value.slice(0, commentIdx).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
     if (!process.env[key]) process.env[key] = value;
   }
 }
@@ -29,6 +35,9 @@ loadEnvLocal();
 // -- Configuration ----------------------------------------------------------
 
 const CONVEX_URL = process.env.CONVEX_URL ?? "http://127.0.0.1:3210";
+const WEBHOOK_URL = process.env.WEBHOOK_URL;
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+const WEBHOOK_ID = process.env.WEBHOOK_ID;
 const CLEAR_BATCH_SIZE = 256;
 const SYNC_BATCH_SIZE = 250;
 
@@ -471,6 +480,33 @@ async function scrapePage(page: import("playwright").Page, siteName: string): Pr
 
 // -- Main -------------------------------------------------------------------
 
+async function postCompletionWebhook() {
+  if (!WEBHOOK_URL || !WEBHOOK_SECRET || !WEBHOOK_ID) {
+    console.log("Skipping completion webhook: WEBHOOK_URL, WEBHOOK_SECRET, or WEBHOOK_ID is missing.");
+    return;
+  }
+
+  const webhookId = `${WEBHOOK_ID}_${Date.now()}`;
+  console.log(`Posting completion webhook to: ${WEBHOOK_URL}`);
+
+  const res = await fetch(WEBHOOK_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-webhook-secret": WEBHOOK_SECRET,
+    },
+    body: JSON.stringify({ webhookId }),
+  });
+
+  const text = await res.text();
+  console.log(`Webhook status: ${res.status}`);
+  console.log(`Webhook body: ${text}`);
+
+  if (!res.ok) {
+    throw new Error(`Completion webhook failed with status ${res.status}`);
+  }
+}
+
 async function main() {
   const client = new ConvexHttpClient(CONVEX_URL);
   const allHeadlines: Headline[] = [];
@@ -595,6 +631,7 @@ async function main() {
 
   console.log(`\nDone! Total headlines scraped: ${allHeadlines.length}`);
 
+  await postCompletionWebhook();
 }
 
 main().catch(console.error);
